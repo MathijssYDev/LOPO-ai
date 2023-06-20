@@ -18,11 +18,10 @@ class imageHandler():
         for y in range(len(image)):
             for x in range(len(image[y])):
                 # make every pixel one value & make every pixel a value between 0 and 1
-                image[y][x] = image[y][x][0] / 255
+                image[y][x] = image[y][x] / 255
         return image
 
     def one_zero_to_image(self, image):
-        print(image)
         for y in range(len(image)):
             for x in range(len(image[y])):
                 c = round(image[y][x] * 255)
@@ -41,3 +40,10 @@ class imageHandler():
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
         # img.show()
         img.save(loc)
+
+    def make_image_full_list(self, image):
+        newlist = []
+        for y in range(len(image)):
+            for x in range(len(image[y])):
+                newlist.append(image[y][x])
+        return newlist

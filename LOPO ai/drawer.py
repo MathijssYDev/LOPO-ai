@@ -2,7 +2,7 @@ import time
 import pygame
 import image_handler
 import sys
-
+import numpy as np
 
 class drawer():
     def __init__(self, r):
@@ -59,124 +59,74 @@ class drawer():
             case pygame.K_9:
                 self.Subject = 9
 
-    def start_drawing_train(self):
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self.holdingMouse = True
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    self.holdingMouse = False
-                elif event.type == pygame.KEYDOWN:
-                    self.match_event_key(event.key)
-                    match event.key:
-                        case pygame.K_DELETE:
-                            self.gridDisplay.fill((0, 0, 0))
-                            self.pixels = []
-                            for i in range(self.res[0]):
-                                self.pixels.append([])
-                                for x in range(self.res[1]):
-                                    self.pixels[i].append(0)
-                        case pygame.K_END:
-                            self.gridDisplay.fill((0, 0, 0))
-                            filedir = "Opas ai\data\d"+str(self.Subject) + "\img-" + \
-                                str(self.current_milli_time())+".png"
-                            open(filedir, "w").close()
-                            self.image_handler.write_image(
-                                filedir, self.pixels, (self.res[0], self.res[1]), 270, True)
-                            self.pixels = []
-                            for i in range(self.res[0]):
-                                self.pixels.append([])
-                                for x in range(self.res[1]):
-                                    self.pixels[i].append(0)
+    def start_drawing(self, s1, s2):
+        try:
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        self.holdingMouse = True
+                    elif event.type == pygame.MOUSEBUTTONUP:
+                        self.holdingMouse = False
+                    elif event.type == pygame.KEYDOWN:
+                        self.match_event_key(event.key)
+                        match event.key:
+                            case pygame.K_DELETE:
+                                self.gridDisplay.fill((0, 0, 0))
+                                self.pixels = []
+                                for i in range(self.res[0]):
+                                    self.pixels.append([])
+                                    for x in range(self.res[1]):
+                                        self.pixels[i].append(0)
+                            case pygame.K_END:
+                                self.gridDisplay.fill((0, 0, 0))
+                                if s1[0]:
+                                    filedir = s1[1] + "\d"+str(self.Subject) + "\img-" + \
+                                        str(self.current_milli_time())+".png"
+                                    open(filedir, "w").close()
+                                    self.image_handler.write_image(
+                                        filedir, self.pixels, (self.res[0], self.res[1]), 0, False)
+                                if s2[0]:
+                                    s2[1](self.pixels)
+                                self.pixels = []
+                                for i in range(self.res[0]):
+                                    self.pixels.append([])
+                                    for x in range(self.res[1]):
+                                        self.pixels[i].append(0)
 
-            if self.holdingMouse:
-                mouse = pygame.mouse.get_pos()
-                x, y = round(mouse[0]/self.pixelres[0]-self.pixelres[0] / (8*self.res[0])
-                             ), round(mouse[1]/self.pixelres[1]-self.pixelres[1]/(8*self.res[1]))
-                if self.lastPixel == [x, y]:
-                    continue
-                self.lastPixel = [x, y]
-                pygame.draw.rect(self.gridDisplay, (255, 255, 255), [
-                    x*self.pixelres[0], y*self.pixelres[1], self.pixelres[0], self.pixelres[1]])
-                for y2 in range(3):
-                    for x2 in range(3):
-                        color = round(255*self.Intensity[y2][x2])
-                        self.IntensityCoord = self.IntensityCoords[y2][x2]
-                        xp, yp = x + \
-                            self.IntensityCoord[0], y+self.IntensityCoord[1]
+                if self.holdingMouse:
+                    mouse = pygame.mouse.get_pos()
+                    x, y = round(mouse[0]/self.pixelres[0]-self.pixelres[0] / (8*self.res[0])
+                                 ), round(mouse[1]/self.pixelres[1]-self.pixelres[1]/(8*self.res[1]))
+                    if self.lastPixel == [x, y]:
+                        continue
+                    self.lastPixel = [x, y]
+                    pygame.draw.rect(self.gridDisplay, (255, 255, 255), [
+                        x*self.pixelres[0], y*self.pixelres[1], self.pixelres[0], self.pixelres[1]])
+                    for y2 in range(3):
+                        for x2 in range(3):
+                            color = round(255*self.Intensity[y2][x2])
+                            self.IntensityCoord = self.IntensityCoords[y2][x2]
+                            xp, yp = x + \
+                                self.IntensityCoord[0], y + \
+                                self.IntensityCoord[1]
+                            if yp > len(self.pixels)-1:
+                                continue
+                            if xp > len(self.pixels[yp])-1:
+                                continue
+                            self.pixels[yp][xp] += color
+                            color = self.pixels[yp][xp]
+                            if color > 255:
+                                color = 255
+                                self.pixels[yp][xp] = 255
+                            pygame.draw.rect(self.gridDisplay, (color, color, color), [
+                                x*(self.pixelres[0])+self.IntensityCoord[0]*self.pixelres[0], y*(self.pixelres[1])+self.IntensityCoord[1]*self.pixelres[1], self.pixelres[0], self.pixelres[1]])
 
-                        self.pixels[xp][yp] += color
-                        color = self.pixels[xp][yp]
-                        if color > 255:
-                            color = 255
-                            self.pixels[xp][yp] = 255
-                        pygame.draw.rect(self.gridDisplay, (color, color, color), [
-                            x*(self.pixelres[0])+self.IntensityCoord[0]*self.pixelres[0], y*(self.pixelres[1])+self.IntensityCoord[1]*self.pixelres[1], self.pixelres[0], self.pixelres[1]])
+                pygame.display.update()
+        except:
+            pass
 
-            pygame.display.update()
-
-    def start_drawing_free(self):
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self.holdingMouse = True
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    self.holdingMouse = False
-                elif event.type == pygame.KEYDOWN:
-                    self.match_event_key(event.key)
-                    match event.key:
-                        case pygame.K_DELETE:
-                            self.gridDisplay.fill((0, 0, 0))
-                            self.pixels = []
-                            for i in range(self.res[0]):
-                                self.pixels.append([])
-                                for x in range(self.res[1]):
-                                    self.pixels[i].append(0)
-                        case pygame.K_END:
-                            self.gridDisplay.fill((0, 0, 0))
-                            filedir = "Opas ai\data\d"+str(self.Subject) + "\img-" + \
-                                str(self.current_milli_time())+".png"
-                            open(filedir, "w").close()
-                            self.image_handler.write_image(
-                                filedir, self.pixels, (self.res[0], self.res[1]), 270, True)
-                            self.pixels = []
-                            for i in range(self.res[0]):
-                                self.pixels.append([])
-                                for x in range(self.res[1]):
-                                    self.pixels[i].append(0)
-
-            if self.holdingMouse:
-                mouse = pygame.mouse.get_pos()
-                x, y = round(mouse[0]/self.pixelres[0]-self.pixelres[0] / (8*self.res[0])
-                             ), round(mouse[1]/self.pixelres[1]-self.pixelres[1]/(8*self.res[1]))
-                if self.lastPixel == [x, y]:
-                    continue
-                self.lastPixel = [x, y]
-                pygame.draw.rect(self.gridDisplay, (255, 255, 255), [
-                    x*self.pixelres[0], y*self.pixelres[1], self.pixelres[0], self.pixelres[1]])
-                for y2 in range(3):
-                    for x2 in range(3):
-                        color = round(255*self.Intensity[y2][x2])
-                        self.IntensityCoord = self.IntensityCoords[y2][x2]
-                        xp, yp = x + \
-                            self.IntensityCoord[0], y+self.IntensityCoord[1]
-
-                        self.pixels[xp][yp] += color
-                        color = self.pixels[xp][yp]
-                        if color > 255:
-                            color = 255
-                            self.pixels[xp][yp] = 255
-                        pygame.draw.rect(self.gridDisplay, (color, color, color), [
-                            x*(self.pixelres[0])+self.IntensityCoord[0]*self.pixelres[0], y*(self.pixelres[1])+self.IntensityCoord[1]*self.pixelres[1], self.pixelres[0], self.pixelres[1]])
-
-            pygame.display.update()
-
-
-a = drawer([32, 32])
-drawer.start_drawing_free(a)
+    def quit(self):
+        pygame.quit()
